@@ -1,0 +1,96 @@
+schema: '2.0'
+stages:
+  download:
+    cmd: python -m lbank download
+    deps:
+    - path: src/lbank/download.py
+      hash: md5
+      md5: 9255116a93bfd602145618e93730ae36
+      size: 7762
+    - path: src/lbank/layout.py
+      hash: md5
+      md5: 968c4b2daa28b2a348a52d5fb9ac4555
+      size: 2077
+    outs:
+    - path: data/_state/s3_manifest.jsonl
+      hash: md5
+      md5: fbf1e7cd3b0de1101ecb1165a5738f79
+      size: 3936905
+    - path: data/raw
+      hash: md5
+      md5: 26ea18354a19267c557c088084f339e2.dir
+      size: 5349322481
+      nfiles: 7671
+  pipeline:
+    cmd: python -m lbank pipeline
+    deps:
+    - path: contracts/tables.yml
+      hash: md5
+      md5: fcef0ba7c6905c69b3f7e7780a409569
+      size: 8828
+    - path: data/raw
+      hash: md5
+      md5: 26ea18354a19267c557c088084f339e2.dir
+      size: 5349322481
+      nfiles: 7671
+    - path: src/lbank/layout.py
+      hash: md5
+      md5: 968c4b2daa28b2a348a52d5fb9ac4555
+      size: 2077
+    - path: src/lbank/pipeline.py
+      hash: md5
+      md5: 1022106d28cc328663fa45feb4dbce2d
+      size: 11830
+    outs:
+    - path: data/bronze
+      hash: md5
+      md5: 0ea69658a7a0f0da31440d0e260157e6.dir
+      size: 830796210
+      nfiles: 13
+    - path: data/silver
+      hash: md5
+      md5: 07d337d7cf694365fea488cb97231029.dir
+      size: 1421525906
+      nfiles: 13
+    - path: data/warehouse.duckdb
+      hash: md5
+      md5: ea8a722466ff71b9ec6e7bca12bc4031
+      size: 274432
+  dq:
+    cmd: python -m lbank dq
+    deps:
+    - path: contracts/tables.yml
+      hash: md5
+      md5: fcef0ba7c6905c69b3f7e7780a409569
+      size: 8828
+    - path: data/silver
+      hash: md5
+      md5: 07d337d7cf694365fea488cb97231029.dir
+      size: 1421525906
+      nfiles: 13
+    - path: src/lbank/dq.py
+      hash: md5
+      md5: 794bb0d69fab020fcbdd37f8a393985d
+      size: 8709
+    outs:
+    - path: reports/data_quality.md
+      hash: md5
+      md5: 9154aebc2577791457e4f3e160cdc520
+      size: 7804
+  eda:
+    cmd: python -m lbank eda
+    deps:
+    - path: data/silver
+      hash: md5
+      md5: 07d337d7cf694365fea488cb97231029.dir
+      size: 1421525906
+      nfiles: 13
+    - path: src/lbank/eda.py
+      hash: md5
+      md5: a562aa634114e6174477809ff217adcd
+      size: 6106
+    outs:
+    - path: reports/eda_contact_center.md
+      hash: md5
+      md5: 6d7fdcf9ae2e142e2b79f3e45c60ccde
+      size: 8449
