@@ -2,7 +2,7 @@
 
 Sistema de atención al cliente bancario AI-first para el workflow de **información y elegibilidad de crédito**, construido sobre el dataset LATAM Bank.
 
-> En construcción. Deadline: 2026-10-05.
+> En construcción. Deadline: 2026-10-05, 23:59. Plan de trabajo: [docs/PLAN.md](docs/PLAN.md).
 
 ## Principios
 - El LLM conversa; los números los calcula código determinista y cada cifra se verifica contra el output de una herramienta.
