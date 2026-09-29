@@ -46,6 +46,16 @@ S3 ──download (manifest, ETag-incremental)──► data/raw/…            
 `uv run python -m lbank dq --strict` sale con código ≠ 0 ante fallas de nivel error (para CI). Consultas: `uv run duckdb data/warehouse.duckdb`.
 
 ### Versionado de datos (DVC)
-`dvc.yaml` define la cadena `download → pipeline → dq → eda`; `make repro` (= `dvc repro`) la ejecuta y `dvc.lock` fija el hash de `data/raw`, `data/bronze` y `data/silver` en cada commit. Las salidas son `persist` (DVC no las borra; la descarga sigue siendo incremental) y `download` es `always_changed` para detectar late arrivals en S3. Volver a una versión: `git checkout <commit> && dvc checkout`. Remote de DVC: pendiente de configurar.
+`dvc.yaml` define la cadena `download → pipeline → dq → eda`; `make repro` (= `dvc repro`) la ejecuta y `dvc.lock` fija el hash de `data/raw`, `data/bronze` y `data/silver` en cada commit. Las salidas son `persist` (DVC no las borra; la descarga sigue siendo incremental) y `download` es `always_changed` para detectar late arrivals en S3. Volver a una versión: `git checkout <commit> && dvc checkout`. 
+
+**Remote (Google Drive).** `dvc push` / `dvc pull` usan la carpeta compartida del equipo (default remote `gdrive`). Cada miembro necesita acceso a la carpeta, estar en la lista de test users del cliente OAuth y configurar localmente (no se commitea, va a `.dvc/config.local`):
+
+```bash
+uv run dvc remote modify --local gdrive gdrive_client_id '<CLIENT_ID>'
+uv run dvc remote modify --local gdrive gdrive_client_secret '<CLIENT_SECRET>'
+uv run dvc pull     # primera vez abre el login de Google en el navegador
+```
+
+Pide el client ID/secret por un canal privado. Con el consent screen en modo Testing el token expira cada 7 días (vuelve a pedir login).
 
 `data/` (~7 GB) no se versiona en git. El pipeline proviene del setup de datos previo del equipo para este hackathon.

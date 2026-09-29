@@ -13,7 +13,7 @@ dependencies = [
 
 [project.optional-dependencies]
 analysis = ["jupyterlab>=4", "pandas>=2", "matplotlib>=3.8"]
-dev = ["pytest>=8", "ruff>=0.6", "dvc>=3.50"]
+dev = ["pytest>=8", "ruff>=0.6", "dvc[gdrive]>=3.50", "pyopenssl==24.2.1"]  # pydrive2 caps pyOpenSSL; 24.2.1 pulls a compatible cryptography
 
 [build-system]
 requires = ["hatchling"]
