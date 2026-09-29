@@ -1,0 +1,50 @@
+# Versionado del dataset LATAM Bank: `dvc repro` corre la cadena y dvc.lock fija el
+# hash de cada capa en el commit. Asume DATA_DIR=./data (default de .env.example).
+# persist: true -> DVC no borra las salidas antes de correr; download y pipeline
+# son incrementales (manifest ETag / tablas sin cambios se omiten).
+stages:
+  download:
+    cmd: python -m lbank download
+    always_changed: true        # el bucket puede recibir late arrivals; el manifest decide qué bajar
+    deps:
+      - src/lbank/download.py
+      - src/lbank/layout.py
+    outs:
+      - data/raw:
+          persist: true
+      - data/_state/s3_manifest.jsonl:
+          persist: true
+
+  pipeline:
+    cmd: python -m lbank pipeline
+    deps:
+      - data/raw
+      - contracts/tables.yml
+      - src/lbank/pipeline.py
+      - src/lbank/layout.py
+    outs:
+      - data/bronze:
+          persist: true
+      - data/silver:
+          persist: true
+      - data/warehouse.duckdb:
+          cache: false          # solo vistas con rutas absolutas; se regenera
+
+  dq:
+    cmd: python -m lbank dq
+    deps:
+      - data/silver
+      - contracts/tables.yml
+      - src/lbank/dq.py
+    outs:
+      - reports/data_quality.md:
+          cache: false          # versionado en git
+
+  eda:
+    cmd: python -m lbank eda
+    deps:
+      - data/silver
+      - src/lbank/eda.py
+    outs:
+      - reports/eda_contact_center.md:
+          cache: false

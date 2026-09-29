@@ -14,4 +14,38 @@ Sistema de atención al cliente bancario AI-first para el workflow de **informac
 Algunas piezas genéricas (motor de amortización, audit log append-only, cliente LLM) provienen de un proyecto previo del equipo y se declaran explícitamente aquí cuando se incorporen.
 
 ## Setup
-Copia `.env.example` a `.env` y completa las variables. **Nunca** subas credenciales al repositorio.
+Requiere Python ≥ 3.11, [uv](https://docs.astral.sh/uv/) y `make`.
+
+```bash
+make setup    # crea .venv, instala dependencias y .env desde .env.example
+```
+
+Completa `.env` (API key de Anthropic + credenciales read-only del Data Dictionary PDF). **Nunca** subas credenciales al repositorio.
+
+## Pipeline de datos (`src/lbank`)
+Descarga incremental desde S3 y capas bronze/silver sobre DuckDB, con contratos de datos (`contracts/tables.yml`) derivados del data dictionary oficial.
+
+```
+S3 ──download (manifest, ETag-incremental)──► data/raw/…               tal como se entrega
+   ──pipeline──────────────────────────────► data/bronze/<t>.parquet   todo VARCHAR + lineage
+                                             data/silver/<t>.parquet   tipado, limpio, 1 fila / PK
+   ──dq────────────────────────────────────► reports/data_quality.md
+   ──eda───────────────────────────────────► reports/eda_contact_center.md
+                                             data/warehouse.duckdb     vistas silver.*, bronze.*
+```
+
+| comando | qué hace |
+|---|---|
+| `make check` | verifica credenciales y lista tablas/tamaños del bucket (sin descargar) |
+| `make sample` | primeros 3 archivos por tabla → bronze → silver → DQ → EDA |
+| `make download` | descarga incremental: solo objetos nuevos/cambiados (re-ejecutar para late arrivals) |
+| `make pipeline` | raw → bronze → silver; omite tablas cuyos inputs no cambiaron |
+| `make all` | download + pipeline + dq + eda |
+| `make fixture-test` | test offline end-to-end con fixture sintético (late arrival, re-entrega corregida, columna nueva) |
+
+`uv run python -m lbank dq --strict` sale con código ≠ 0 ante fallas de nivel error (para CI). Consultas: `uv run duckdb data/warehouse.duckdb`.
+
+### Versionado de datos (DVC)
+`dvc.yaml` define la cadena `download → pipeline → dq → eda`; `make repro` (= `dvc repro`) la ejecuta y `dvc.lock` fija el hash de `data/raw`, `data/bronze` y `data/silver` en cada commit. Las salidas son `persist` (DVC no las borra; la descarga sigue siendo incremental) y `download` es `always_changed` para detectar late arrivals en S3. Volver a una versión: `git checkout <commit> && dvc checkout`. Remote de DVC: pendiente de configurar.
+
+`data/` (~7 GB) no se versiona en git. El pipeline proviene del setup de datos previo del equipo para este hackathon.
