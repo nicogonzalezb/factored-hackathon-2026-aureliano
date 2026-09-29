@@ -1,0 +1,26 @@
+# Secretos: nunca subir credenciales (AWS del dataset, API keys)
+.env
+.env.*
+!.env.example
+*.pem
+.aws/
+
+# Datos: el dataset LATAM Bank no se versiona
+data/
+*.parquet
+*.csv
+*.duckdb
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.astro/
+
+.DS_Store
